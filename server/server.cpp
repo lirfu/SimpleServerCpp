@@ -1,14 +1,27 @@
 // Server side C/C++ program to demonstrate Socket programming
 #include <iostream>
+#include <fstream>
 #include <csignal>
 
 #include "../Communications.h"
 
 class MyServer : public Server
 {
+private:
+	int img_size;
+	char* img;
 
 public:
-	MyServer() {}
+	MyServer() {
+
+		std::ifstream infile("../fig.png");
+        infile.seekg(0, std::ios::end);
+        img_size = infile.tellg();
+        infile.seekg(0, std::ios::beg);
+
+		img = new char[img_size] {0};
+        infile.read(img, img_size);
+	}
 
 	void Serve()
 	{
@@ -31,30 +44,21 @@ public:
 
 		std::cout << "Connection established!" << std::endl;
 
-		char* msg = "SERVER veli bok!";
+		std::cout << "Image size: " << img_size << std::endl;
 
-		int buffer_size = 1024;
-		char buffer[buffer_size] = {0};
+		ensure(ReadHandshake(client));
+		ensure(SendHandshake(client, img_size, 1024));  // Also sets up the sending buffers.
 
-		while (true)
-		{
-			std::cout << "Waiting for input!" << std::endl;
+		uint size;
+		char * buffer;
+		ensure(ReadMessage(client, buffer, size));
 
-			if (Read(client, buffer, buffer_size) < 0)
-				break;
+		std::cout << "Got message (length " << size << "): " << buffer << std::endl;
 
-			std::cout << buffer << std::endl;
+		ensure(SendMessage(client, img, img_size));
 
-			if (Send(client, msg, strlen(msg)) < 0)
-				break;
-
-			usleep(100000u);
-		}
-
-		close(client);
-		close(socket_descriptor);
-
-		std::cout << "Exited!" << std::endl;
+		Close();
+		std::cout << "Done!" << std::endl;
 	}
 
 private:

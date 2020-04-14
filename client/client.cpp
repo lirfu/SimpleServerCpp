@@ -1,5 +1,6 @@
 // Client side C/C++ program to demonstrate Socket programming
 #include <iostream>
+#include <fstream>
 #include <csignal>
 
 #include "../Communications.h"
@@ -31,30 +32,29 @@ public:
 
         std::cout << "Connection established!" << std::endl;
 
-        int buffer_size = 1024;
-        char buffer[buffer_size] = {0};
-        char msg[] = "1 CLIENT veli bok!";
+        int server = socket_descriptor;
 
-        int i = 0;
-        while(++i < 10)
-        {
-            if (Send(socket_descriptor, msg, strlen(msg)) < 0)
-				break;
+        char msg[] = "Ok! Send me the image.\0";
+        uint length = strlen(msg);
 
-            std::cout << "Waiting for input!" << std::endl;
+        ensure(SendHandshake(server, length, 1024));
+        ensure(ReadHandshake(server));
 
-            if (Read(socket_descriptor, buffer, buffer_size) < 0)
-				break;
 
-			std::cout << buffer << std::endl;
+        ensure(SendMessage(server, msg, length));
 
-            msg[0]++;
-            usleep(300000u);
-        }
+        uint size;
+        char * buffer;
+        ensure(ReadMessage(server, buffer, size));
 
-        std::cout << "Done." << std::endl;
+        std::cout << "Got (length " << size << "): " << std::endl;
 
-        close(socket_descriptor);
+        std::ofstream outfile("../out.png", std::ofstream::binary);
+        outfile.write(buffer, size);
+        outfile.close();
+
+        Close();
+        std::cout << "Exiting." << std::endl;
     }
 
 private:
@@ -69,6 +69,7 @@ private:
 int main(int argc, char const *argv[])
 {
     MyClient client;
+    for(int i=0; i<1; i++)
     client.DoWork();
     return 0;
 }
