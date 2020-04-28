@@ -1,6 +1,8 @@
 // Client side C/C++ program to demonstrate Socket programming
 #include <iostream>
 #include <fstream>
+#include <sstream>
+#include <string>
 #include <csignal>
 
 #include "../Communications.h"
@@ -34,8 +36,17 @@ public:
 
         int server = socket_descriptor;
 
-        char msg[] = "Ok! Send me the image.\0";
-        uint length = strlen(msg);
+        std::stringstream strstr;
+        char c = '1';
+        uint length = 128;
+        char msg[length] = {0};
+        for(int i = 0; i < length; i++)
+        {
+            msg[i] = c;
+            c = c == '9' ? '0' : c + 1;
+        }
+
+        std::cout << msg << std::endl;
 
         ensure(SendHandshake(server, length, 1024));
         ensure(ReadHandshake(server));
@@ -47,7 +58,7 @@ public:
         char * buffer;
         ensure(ReadMessage(server, buffer, size));
 
-        std::cout << "Got (length " << size << "): " << std::endl;
+        std::cout << "Got image (length " << size << ")" << std::endl;
 
         std::ofstream outfile("../out.png", std::ofstream::binary);
         outfile.write(buffer, size);
