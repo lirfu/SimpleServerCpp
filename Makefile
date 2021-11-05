@@ -1,16 +1,14 @@
 
 .PHONY : all
-all : client server
+all : send_image messenger
 
 bindir :
 	mkdir -p bin
 
-.PHONY : client
-client : bindir client/client.cpp
-	$(dir_guard)
-	g++ client/client.cpp -o bin/client
+.PHONY : send_image
+send_image : bindir src/send_image.cpp
+	g++ src/send_image.cpp -o bin/send_image -Iinclude -pthread
 
-.PHONY : server
-server : bindir server/server.cpp
-	$(dir_guard)
-	g++ server/server.cpp -o bin/server
+.PHONY : messenger
+messenger : bindir src/messenger.cpp
+	g++ src/messenger.cpp -o bin/messenger -Iinclude -pthread

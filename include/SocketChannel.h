@@ -16,11 +16,12 @@ protected:
     int port;
     uint buffer_size;
     uint data_length;
+    std::string addr = LOCALHOST;
     C channel;
 
     static void CatchSignal(int signum)
     {
-        std::cerr << "!!! Socket caught signal: " << signum << " - " << std::strerror(errno) << std::endl;
+        std::cerr << "[COMMS] Socket caught signal: " << signum << " - " << std::strerror(errno) << std::endl;
         // TODO: Handle socket closing.
     }
 
@@ -30,9 +31,22 @@ public:
         channel.Close();
     }
 
+    void Setup(std::string& ip_addr, int socket_port, uint buffer_length, uint data_length)
+    {
+        addr = ip_addr;
+        port = socket_port;
+        buffer_size = buffer_length;
+        data_length = data_length;
+    }
+
     void SetPort(int port_num)
     {
         port = port_num;
+    }
+
+    void SetAddress(std::string& ip_addr)
+    {
+        addr = ip_addr;
     }
 
     void SetBufferLength(uint length)
@@ -49,7 +63,6 @@ public:
 class SocketInputChannel : public ASocketChannel<Client>
 {
 public:
-
     ~SocketInputChannel()
     {
         Close();
@@ -59,29 +72,29 @@ public:
     {
         signal(SIGPIPE, CatchSignal);
 
-		if ( channel.Initialize(port) )
+		if ( channel.Initialize(port, addr) )
 		{
-			std::cerr << "Input initialization failed!" << std::endl;
+			std::cerr << "[COMMS] Input initialization failed!" << std::endl;
 			return -1;
 		}
 
-		std::cout << "Waiting on input connection..." << std::endl;
+		std::cout << "[COMMS] Waiting on input connection..." << std::endl;
 		if ( channel.Connect() )
 		{
-			std::cerr << "Input connection failed!" << std::endl;
+			std::cerr << "[COMMS] Input connection failed!" << std::endl;
 			return -1;
 		}
-		std::cout << "Input connected!" << std::endl;
+		std::cout << "[COMMS] Input connected!" << std::endl;
 
 		// Handshakes.
         if ( channel.ReadHandshake(channel.GetSocket()) )
         {
-            std::cerr << "Error reading input handsake." << std::endl;
+            std::cerr << "[COMMS] Error reading input handsake." << std::endl;
             return -1;
         }
         if ( channel.SendHandshake(channel.GetSocket(), data_length, buffer_size) )
 		{
-			std::cerr << "Error sending input handsake." << std::endl;
+			std::cerr << "[COMMS] Error sending input handsake." << std::endl;
 			return -1;
 		}
 
@@ -111,29 +124,29 @@ public:
     {
         signal(SIGPIPE, CatchSignal);
 
-		if ( channel.Initialize(port) )
+		if ( channel.Initialize(port, addr) )
 		{
-			std::cerr << "Output initialization failed!" << std::endl;
+			std::cerr << "[COMMS] Output initialization failed!" << std::endl;
 			return -1;
 		}
 
-		std::cout << "Waiting on output connection..." << std::endl;
+		std::cout << "[COMMS] Waiting on output connection..." << std::endl;
 		if ( channel.Connect() )
 		{
-			std::cerr << "Output connection failed!" << std::endl;
+			std::cerr << "[COMMS] Output connection failed!" << std::endl;
 			return -1;
 		}
-		std::cout << "Output connected!" << std::endl;
+		std::cout << "[COMMS] Output connected!" << std::endl;
 
 		// Handshakes.
         if ( channel.SendHandshake(channel.GetClientSocket(), data_length, buffer_size) )
         {
-            std::cerr << "Error sending output handsake." << std::endl;
+            std::cerr << "[COMMS] Error sending output handsake." << std::endl;
             return -1;
         }
         if ( channel.ReadHandshake(channel.GetClientSocket()) )
         {
-            std::cerr << "Error reading output handsake." << std::endl;
+            std::cerr << "[COMMS] Error reading output handsake." << std::endl;
             return -1;
         }
 

@@ -17,6 +17,8 @@ namespace comms {
 
 #define MESSAGES_VERSION 00010001  // Lowest four digits are minor, rest is major. If major isn't same, messages aren't compatible.
 
+#define LOCALHOST "127.0.0.1"
+
 /** Handshake. */
 typedef struct M
 {
@@ -66,14 +68,14 @@ protected:
 		do {
 			int read_bytes = read(socket, buffer, buffer_lenght);
 #ifdef DEBUG_SOCKETSERVER
-            std::cout << "---------- Reading block: " << read_bytes << 'B' << std::endl;
+            std::cout << "[COMMS] ---------- Reading block: " << read_bytes << 'B' << std::endl;
 #endif
 			if (read_bytes >= 0)
 			{
 				return read_bytes;
 			}
             ++read_attempts;
-			std::cerr << "Error reading block - attempt " << read_attempts << '/' << RETRY_ATTEMPTS << std::endl;
+			std::cerr << "[COMMS] Error reading block - attempt " << read_attempts << '/' << RETRY_ATTEMPTS << std::endl;
 			usleep(RETRY_PERIOD_MS);
 		} while (read_attempts < RETRY_ATTEMPTS);
 
@@ -88,14 +90,14 @@ protected:
 		do {
 			int write_bytes = send(socket , buffer , buffer_lenght , 0);  // Zero means no flags.
 #ifdef DEBUG_SOCKETSERVER
-            std::cout << "---------- Sending block: " << write_bytes << 'B' << std::endl;
+            std::cout << "[COMMS] ---------- Sending block: " << write_bytes << 'B' << std::endl;
 #endif
 			if (write_bytes >= 0)
 			{
 				return write_bytes;
 			}
             ++write_attempts;
-			std::cerr << "Error sending block - attempt " << write_attempts << '/' << RETRY_ATTEMPTS << std::endl;
+			std::cerr << "[COMMS] Error sending block - attempt " << write_attempts << '/' << RETRY_ATTEMPTS << std::endl;
 			usleep(RETRY_PERIOD_MS);
 		} while (write_attempts < RETRY_ATTEMPTS);
 
@@ -122,7 +124,7 @@ public:
         data_size = std::min(data_size, data_max_size);
 
 #ifdef DEBUG_SOCKETSERVER
-        std::cout << " = Reading packages ~#" << (int)(data_size / block_size) << "  (length " << data_size << ")" << std::endl;
+        std::cout << "[COMMS]  = Reading packages ~#" << (int)(data_size / block_size) << "  (length " << data_size << ")" << std::endl;
 #endif
 
         int read_bytes = 0;
@@ -133,7 +135,7 @@ public:
             if (read_bytes < 0) return -1;  // On error, return.
             total_read += read_bytes;
 #ifdef DEBUG_SOCKETSERVER
-            std::cout << "   --> " << data_size - total_read << "B remaining to read" << std::endl;
+            std::cout << "[COMMS]    --> " << data_size - total_read << "B remaining to read" << std::endl;
 #endif
         }
 
@@ -151,7 +153,7 @@ public:
         if (msg_len > write_desc_.data_length)
         {
 #ifdef DEBUG_SOCKETSERVER
-            std::cerr << "! Too much data to send, the overflow will be ignored (" << msg_len << '>' << write_desc_.data_length << ')' << std::endl;
+            std::cerr << "[COMMS] ! Too much data to send, the overflow will be ignored (" << msg_len << '>' << write_desc_.data_length << ')' << std::endl;
 #endif
             data_size = write_desc_.data_length * sizeof(char);
         }
@@ -159,8 +161,8 @@ public:
         // Send the package number and length.
 #ifdef DEBUG_SOCKETSERVER
         int pck_num = data_size / block_size;
-        std::cout << " = Sending packages #" << pck_num << "  (length " << data_size << ")" << std::endl;
-        std::cout << "  --> package (initial)" << " = B" << sizeof(data_size) << std::endl;
+        std::cout << "[COMMS]  = Sending packages #" << pck_num << "  (length " << data_size << ")" << std::endl;
+        std::cout << "[COMMS]   --> package (initial)" << " = B" << sizeof(data_size) << std::endl;
 #endif
         if (SendBlock(socket, (char *) &data_size, sizeof(data_size)) < 0) return -1;
 
@@ -172,7 +174,7 @@ public:
             if (sent_bytes < 0) return -1;  // On error, return.
             total_sent += sent_bytes;
 #ifdef DEBUG_SOCKETSERVER
-            std::cout << "   --> " << data_size - total_sent << "B remaining to send" << std::endl;
+            std::cout << "[COMMS]    --> " << data_size - total_sent << "B remaining to send" << std::endl;
 #endif
         }
 
@@ -183,14 +185,14 @@ public:
     int ReadHandshake(int socket)
     {
 #ifdef DEBUG_SOCKETSERVER
-        std::cout<<"H Waiting on handshake: block="<<read_desc_.block_size<< " data_len="<<read_desc_.data_length<<std::endl;
+        std::cout<<"[COMMS] H Waiting on handshake: block="<<read_desc_.block_size<< " data_len="<<read_desc_.data_length<<std::endl;
 #endif
         uint length;
         if (ReadMessage(socket, read_buffer_, length) < 0) return -1;
         Message * desc = (Message *) read_buffer_.get();
 
 #ifdef DEBUG_SOCKETSERVER
-        std::cout<<"H Received: block="<<read_desc_.block_size<< " data_len="<<read_desc_.data_length<<std::endl;
+        std::cout<<"[COMMS] H Received: block="<<read_desc_.block_size<< " data_len="<<read_desc_.data_length<<std::endl;
 #endif
 
         bool update = desc->data_length != read_desc_.data_length;
@@ -209,13 +211,13 @@ public:
     {
         Message tmp = {.msg_version=MESSAGES_VERSION, .block_size = block_size, .data_length = data_length};
 #ifdef DEBUG_SOCKETSERVER
-        std::cout<<"H Sending handshake: block="<<tmp.block_size<< " data_len="<<tmp.data_length<<std::endl;
+        std::cout<<"[COMMS] H Sending handshake: block="<<tmp.block_size<< " data_len="<<tmp.data_length<<std::endl;
 #endif
         if (SendMessage(socket, (char *) &tmp, sizeof(Message)) < 0) return -1;
         write_desc_.block_size = block_size;
         write_desc_.data_length = data_length;
 #ifdef DEBUG_SOCKETSERVER
-        std::cout<<"H Sent: block="<<tmp.block_size<< " data_len="<<tmp.data_length<<std::endl;
+        std::cout<<"[COMMS] H Sent: block="<<tmp.block_size<< " data_len="<<tmp.data_length<<std::endl;
 #endif
         return 0;
     }
@@ -223,7 +225,7 @@ public:
     void Close()
     {
 #ifdef DEBUG_SOCKETSERVER
-        std::cout << "Closing socket: " << socket_descriptor << std::endl;
+        std::cout << "[COMMS] Closing socket: " << socket_descriptor << std::endl;
 #endif
         shutdown(socket_descriptor, SHUT_RDWR);  // To kill the accept if it hangs.
 		close(socket_descriptor);
@@ -239,7 +241,7 @@ public:
 class Client : public ICommunicator
 {
 public:
-    int Initialize(int port)
+    int Initialize(int port, const std::string& addr=LOCALHOST)
     {
         // Type of socket: AF_UNIX for processes on the same system, AF_INET for the Internet domain.
 		// Type of channel: SOCK_STREAM reads data as continuous streams, SOCK_DGRAM reads using chunks (datagrams)
@@ -247,7 +249,7 @@ public:
 		socket_descriptor = socket(AF_INET, SOCK_STREAM, 0);
 		if(socket_descriptor < 0)
 		{
-			std::cerr << "Failed creating socket! - " << std::strerror(errno) << std::endl;
+			std::cerr << "[COMMS] Failed creating socket! - " << std::strerror(errno) << std::endl;
 			return -1;
 		}
 
@@ -255,9 +257,9 @@ public:
 	    server_address.sin_port = htons( port );  // Port, converted to network-order short.
 
         // Convert IPv4 and IPv6 addresses from text to binary form
-        if(inet_pton(AF_INET, "127.0.0.1", &server_address.sin_addr) <= 0)
+        if(inet_pton(AF_INET, addr.c_str(), &server_address.sin_addr) <= 0)
         {
-            std::cerr << "Invalid address! - " << std::strerror(errno) << std::endl;
+            std::cerr << "[COMMS] Invalid address! - " << std::strerror(errno) << std::endl;
             return -1;
         }
 
@@ -268,7 +270,7 @@ public:
     {
         if (connect(socket_descriptor, (struct sockaddr *) & server_address, sizeof(server_address)) < 0)
         {
-            std::cerr << "Failed connecting to server! - " << std::strerror(errno) << std::endl;
+            std::cerr << "[COMMS] Failed connecting to server! - " << std::strerror(errno) << std::endl;
 			return -1;
         }
 
@@ -289,7 +291,7 @@ public:
         return client_descriptor;
     }
 
-    int Initialize(int port)
+    int Initialize(int port, const std::string& addr=LOCALHOST)
     {
         // Type of socket: AF_UNIX for processes on the same system, AF_INET for the Internet domain.
 		// Type of channel: SOCK_STREAM reads data as continuous streams, SOCK_DGRAM reads using chunks (datagrams)
@@ -297,7 +299,7 @@ public:
 		socket_descriptor = socket(AF_INET, SOCK_STREAM, 0);
 		if(socket_descriptor < 0)
 		{
-			std::cerr << "Failed creating socket! - " << std::strerror(errno) << std::endl;
+			std::cerr << "[COMMS] Failed creating socket! - " << std::strerror(errno) << std::endl;
 			return -1;
 		}
 
@@ -306,24 +308,31 @@ public:
 	    if (setsockopt(socket_descriptor, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) ||
 			setsockopt(socket_descriptor, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)))
 	    {
-			std::cerr << "Failed setting socket options! - " << std::strerror(errno) << std::endl;
+			std::cerr << "[COMMS] Failed setting socket options! - " << std::strerror(errno) << std::endl;
 			return -1;
 	    }
 
 
 	    server_address.sin_family = AF_INET;  // Always use this.
-	    server_address.sin_addr.s_addr = INADDR_ANY;  // For localhost.
 	    server_address.sin_port = htons( port );  // Port, converted to network-order short.
+        // Convert IPv4 and IPv6 addresses from text to binary form
+        if(inet_pton(AF_INET, addr.c_str(), &server_address.sin_addr) <= 0)
+        {
+            std::cerr << "[COMMS] Invalid address! - " << std::strerror(errno) << std::endl;
+            return -1;
+        }
+
+
 	    if (bind(socket_descriptor, (struct sockaddr *) &server_address, sizeof(server_address)) < 0)
 	    {
-			std::cerr << "Failed binding socket! - " << std::strerror(errno) << std::endl;
+			std::cerr << "[COMMS] Failed binding socket! - " << std::strerror(errno) << std::endl;
 			return -1;
 	    }
 
         // Listen to port.
         if (listen(socket_descriptor, client_queue_size_) < 0)
 	    {
-			std::cerr << "Failed listening socket! - " << std::strerror(errno) << std::endl;
+			std::cerr << "[COMMS] Failed listening socket! - " << std::strerror(errno) << std::endl;
 			return -1;
 	    }
 
@@ -337,7 +346,7 @@ public:
         client_descriptor = accept(socket_descriptor, (struct sockaddr *) &server_address, (socklen_t *) &addr_len);
 		if (client_descriptor < 0)
 		{
-			std::cerr << "Failed connecting to client! - " << std::strerror(errno) << std::endl;
+			std::cerr << "[COMMS] Failed connecting to client! - " << std::strerror(errno) << std::endl;
 			return -1;
 		}
 		return 0;

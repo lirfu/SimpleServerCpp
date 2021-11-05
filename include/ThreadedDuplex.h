@@ -81,7 +81,7 @@ public:
             }
             catch (...)
             {
-                std::cerr << "Input thread exception: " << std::strerror(errno) << std::endl;
+                std::cerr << "[THREADING] Input thread exception: " << std::strerror(errno) << std::endl;
             }
             input_active = false;
         });
@@ -104,7 +104,7 @@ public:
             }
             catch (...)
             {
-                std::cerr << "Output thread exception: " << std::strerror(errno) << std::endl;
+                std::cerr << "[THREADING] Output thread exception: " << std::strerror(errno) << std::endl;
             }
             output_active = false;
         });
@@ -134,7 +134,7 @@ public:
             }
             catch (...)
             {
-                std::cerr << "Input thread exception: " << std::strerror(errno) << std::endl;
+                std::cerr << "[THREADING] Input thread exception: " << std::strerror(errno) << std::endl;
             }
             input_active = false;
         });
@@ -158,7 +158,7 @@ public:
             }
             catch (...)
             {
-                std::cerr << "Output thread exception: " << std::strerror(errno) << std::endl;
+                std::cerr << "[THREADING] Output thread exception: " << std::strerror(errno) << std::endl;
             }
             output_active = false;
         });
