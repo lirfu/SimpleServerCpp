@@ -5,7 +5,8 @@
 #include "DuplexSocketCommunication.h"
 #include "Utils.h"
 
-comms::DuplexSocketCommunication com(3000, 3000);  // Send and read from same socket.
+#define PORT 3000
+comms::DuplexSocketCommunication com;  // Send and read from same socket.
 
 void send_image()
 {
@@ -19,7 +20,7 @@ void send_image()
 
 	com.Output().SetBufferLength(1024);
 	com.Output().SetDataLength(img_size);
-	if ( com.Output().Initialize() )
+	if ( com.Output().Initialize(LOCALHOST, PORT) )
 	{
 		std::cerr << "Cannot initialize output channel!" << std::endl;
 		return;
@@ -39,7 +40,7 @@ void read_image()
 {
 	RegularTicker ticker(33 * 1000);  // 33ms ticker
 	ticker.Start();
-	for (int i=1; i<=100 && com.Input().Initialize(); i++)
+	for (int i=1; i<=100 && com.Input().Initialize(LOCALHOST, PORT); i++)
 	{
 		std::cerr << "Cannot initialize input channel! Attempt " << i << " / 100" << std::endl;
 		ticker.Sleep();

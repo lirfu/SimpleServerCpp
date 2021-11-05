@@ -16,7 +16,6 @@ protected:
     int port;
     uint buffer_size;
     uint data_length;
-    std::string addr = LOCALHOST;
     C channel;
 
     static void CatchSignal(int signum)
@@ -31,22 +30,10 @@ public:
         channel.Close();
     }
 
-    void Setup(std::string& ip_addr, int socket_port, uint buffer_length, uint data_length)
+    void Setup(uint buffer_length, uint data_length)
     {
-        addr = ip_addr;
-        port = socket_port;
         buffer_size = buffer_length;
         data_length = data_length;
-    }
-
-    void SetPort(int port_num)
-    {
-        port = port_num;
-    }
-
-    void SetAddress(std::string& ip_addr)
-    {
-        addr = ip_addr;
     }
 
     void SetBufferLength(uint length)
@@ -68,11 +55,11 @@ public:
         Close();
     }
 
-    virtual int Initialize() override
+    virtual int Initialize(const std::string& address, int port) override
     {
         signal(SIGPIPE, CatchSignal);
 
-		if ( channel.Initialize(port, addr) )
+		if ( channel.Initialize(port, address) )
 		{
 			std::cerr << "[COMMS] Input initialization failed!" << std::endl;
 			return -1;
@@ -120,11 +107,11 @@ public:
         Close();
     }
 
-    virtual int Initialize() override
+    virtual int Initialize(const std::string& ignore="", int port=3000) override
     {
         signal(SIGPIPE, CatchSignal);
 
-		if ( channel.Initialize(port, addr) )
+		if ( channel.Initialize(port) )
 		{
 			std::cerr << "[COMMS] Output initialization failed!" << std::endl;
 			return -1;

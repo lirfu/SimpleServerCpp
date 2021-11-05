@@ -5,14 +5,15 @@
 #include "Utils.h"
 
 #define DEFAULT_PORT 3000
-
+int IN_PORT=DEFAULT_PORT, OUT_PORT=DEFAULT_PORT;
+std::string IN_ADDR(LOCALHOST);
 comms::DuplexSocketCommunication com;
 
 void read()
 {
-	RegularTicker ticker(33 * 1000);  // 33ms ticker
+	RegularTicker ticker(1000 * 1000);  // 1s ticker
 	ticker.Start();
-	for (int i=1; i<=100 && com.Input().Initialize(); i++)
+	for (int i=1; i<=100 && com.Input().Initialize(IN_ADDR, IN_PORT); i++)
 	{
 		std::cerr << "Cannot initialize input channel! Attempt " << i << " / 100" << std::endl;
 		ticker.Sleep();
@@ -61,30 +62,24 @@ int main(int argc, char** argv)
 {
 	if (argc == 1)
 	{
-		com.Input().SetPort(DEFAULT_PORT);
-		com.Output().SetPort(DEFAULT_PORT);
-		std::cout << "Connecting to localhost on port " << DEFAULT_PORT << std::endl;
-	}
-	else if (argc == 2)
-	{
-		int port = std::stoi(argv[1]);
-		com.Input().SetPort(port);
-		com.Output().SetPort(port);
-		std::cout << "Connecting to localhost on port " << port << std::endl;
+		std::cout << "Connecting to " << IN_ADDR << " on port " << IN_PORT << std::endl;
 	}
 	else if (argc == 3)
 	{
-		int port = std::stoi(argv[2]);
-		std::string addr(argv[1]);
-		com.Input().SetAddress(addr);
-		com.Output().SetAddress(addr);
-		com.Input().SetPort(port);
-		com.Output().SetPort(port);
-		std::cout << "Connecting to " << addr << " on port " << port << std::endl;
+		IN_PORT = std::stoi(argv[1]);
+		OUT_PORT = std::stoi(argv[2]);
+		std::cout << "Connecting to " << IN_ADDR << " on port " << IN_PORT << std::endl;
+	}
+	else if (argc == 4)
+	{
+		IN_ADDR = std::string(argv[1]);
+		IN_PORT = std::stoi(argv[2]);
+		OUT_PORT = std::stoi(argv[3]);
+		std::cout << "Connecting to " << IN_ADDR << " on port " << IN_PORT << std::endl;
 	}
 	else
 	{
-		std::cerr << "Please provide a port or IP address and port!" << std::endl;
+		std::cerr << "Please provide nothing, input and output port or input IP address, port and output port!" << std::endl;
 		return 1;
 	}
 
