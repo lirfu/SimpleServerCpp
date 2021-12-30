@@ -30,10 +30,10 @@ public:
         channel.Close();
     }
 
-    void Setup(uint buffer_length, uint data_length)
+    void Setup(uint buffer_len, uint data_len)
     {
-        buffer_size = buffer_length;
-        data_length = data_length;
+        buffer_size = buffer_len;
+        data_length = data_len;
     }
 
     void SetBufferLength(uint length)

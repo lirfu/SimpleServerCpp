@@ -39,7 +39,7 @@ void write()
 	char* input = new char[L];
 	com.Output().SetBufferLength(1024);
 	com.Output().SetDataLength(L);
-	if ( com.Output().Initialize() )
+	if ( com.Output().Initialize(LOCALHOST, OUT_PORT) )
 	{
 		std::cerr << "Cannot initialize output channel!" << std::endl;
 		return;
